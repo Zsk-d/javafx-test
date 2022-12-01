@@ -148,6 +148,7 @@ public class DemoTest extends Application {
                     mouseSelectR.setHeight(Math.abs(Global.mouseNowY - Global.mousePressedY));
                 } else if (event.getTarget() instanceof Circle && !Global.isCirDrag) {
                     System.out.println("拖动圆形");
+                    Global.isCirDrag = true;
                 }
             }
         });

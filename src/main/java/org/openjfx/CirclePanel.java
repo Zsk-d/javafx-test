@@ -27,6 +27,9 @@ public class CirclePanel {
     private double pX;
     private double srcRadius = Config.DEFAULT_CIRCLE_RADIUS;
 
+    private double connectX = 0;
+    private double connectY = 0;
+
     public StackPane getCircle(){
         return this.stack;
     }
@@ -106,12 +109,18 @@ public class CirclePanel {
             circle.startFullDrag();
             Global.isCirDrag = true;
             // 插入其他已选择的图形
-            final List<CirclePanel> cps = new ArrayList<>();
-            Global.cl.forEach(item->{
-                if(item.isSelected()){
+            List<CirclePanel> cps = null;
+            for(CirclePanel item : Global.cl){
+                if(!item.equals(this) && item.isSelected()){
+                    if(cps == null){
+                        cps = new ArrayList<>();
+                    }
                     cps.add(item);
+                    item.setConnectX(stack.getLayoutX() - item.getCircle().getLayoutX());
+                    item.setConnectY(stack.getLayoutY() - item.getCircle().getLayoutY());
                 }
-            });
+            }
+            System.out.println(String.format("同时移动: %s",cps));
             this.setBros(cps);
         });
         this.circle.setOnMouseDragged(new EventHandler<MouseEvent>() {
@@ -119,33 +128,71 @@ public class CirclePanel {
                 // 判断SHIFT是否按下, 决定调整大小还是移动位置
                 if(Global.isShiftPressed){
                     double newR = srcRadius + (event.getX() - pX);
+                    System.out.println("newR = " + newR + ", px = " + pX + ", event x = " + event.getX());
                     if(newR <= 5){
                         newR = 5;
                     }
                     circle.setRadius(newR);
                     Global.isChangeCirR = true;
                 }else{
-                    moveC(event.getSceneX(),event.getSceneY(),cX,cY);
+                    double ccX = event.getSceneX();
+                    double ccY = event.getSceneY();
+                    // System.out.println("ccX = " + ccX + ", ccy = " + ccY);
+                    double[] moveRes = moveC(ccX,ccY,cX,cY);
+                    // 同步移动
+                    if(bros != null){
+                        bros.forEach(item->{
+                            item.getCircle().setLayoutX(moveRes[0] - item.getConnectX());
+                            item.getCircle().setLayoutY(moveRes[1] - item.getConnectY());
+                            // System.out.println("ccX = " + stack.getLayoutX() + ", ccy = " + stack.getLayoutY());
+                        });
+                    }
                 }
             };
         });
         this.circle.setOnMouseDragReleased(new EventHandler<MouseDragEvent>() {
             @Override
             public void handle(MouseDragEvent event) {
-                bros.forEach(item->item.saveR());
+                if(bros != null){
+                    bros.forEach(item->item.saveR());
+                    bros = null;
+                }
                 saveR();
                 Global.isChangeCirR = false;
-                bros = null;
             }
         });
     }
 
-    public void moveC(double sX, double sY, double cX, double cY){
-        stack.setLayoutX(sX - cX);
-        stack.setLayoutY(sY - cY);
+    public double[] moveC(double sX, double sY, double cX, double cY){
+        double xd = sX - cX;
+        double yd = sY - cY;
+        stack.setLayoutX(xd);
+        stack.setLayoutY(yd);
+        return new double[]{xd,yd};
     }
 
     public void saveR(){
         this.srcRadius = this.circle.getRadius();
+    }
+        
+    public double getConnectX() {
+        return connectX;
+    }
+
+    public void setConnectX(double connectX) {
+        this.connectX = connectX;
+    }
+
+    public double getConnectY() {
+        return connectY;
+    }
+
+    public void setConnectY(double connectY) {
+        this.connectY = connectY;
+    }
+
+    @Override
+    public String toString() {
+        return "num: " + this.centerText.getText();
     }
 }
