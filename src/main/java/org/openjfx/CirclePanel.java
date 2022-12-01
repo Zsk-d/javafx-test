@@ -125,7 +125,7 @@ public class CirclePanel {
                     circle.setRadius(newR);
                     Global.isChangeCirR = true;
                 }else{
-                    moveC();
+                    moveC(event.getSceneX(),event.getSceneY(),cX,cY);
                 }
             };
         });
@@ -141,11 +141,11 @@ public class CirclePanel {
     }
 
     public void moveC(double sX, double sY, double cX, double cY){
-        stack.setLayoutX(event.getSceneX() - cX);
-        stack.setLayoutY(event.getSceneY() - cY);
+        stack.setLayoutX(sX - cX);
+        stack.setLayoutY(sY - cY);
     }
 
     public void saveR(){
-        srcRadius = circle.getRadius();
+        this.srcRadius = this.circle.getRadius();
     }
 }
