@@ -33,4 +33,40 @@ public class Global {
      */
     public final static List<CirclePanel> cl = new ArrayList<>();
 
+    /**
+     * 撤销/重做 列表
+     */
+    private final static List<ActionGroup> UNDO_GROUPS = new ArrayList<>();
+
+    /**
+     * 剪贴板
+     */
+    private static ActionGroup COPY_GROUP = null;
+    
+    public static void addUndo(ActionGroup actionGroup){
+        UNDO_GROUPS.add(actionGroup);
+        if(UNDO_GROUPS.size() >  10){
+            UNDO_GROUPS.remove(0);
+        }
+    }
+
+    private ActionGroup getUndo(){
+        if(UNDO_GROUPS.size() > 0){
+            return UNDO_GROUPS.remove(UNDO_GROUPS.size() - 1);
+        }
+        return null;
+    }
+
+    public static void setCopy(ActionGroup actionGroup){
+        COPY_GROUP = actionGroup;
+    }
+
+    public static ActionGroup getCopy(){
+        COPY_GROUP.getItems().forEach(item->{
+            item.setLayoutX(item.getLayoutX() + 5);
+            item.setLayoutY(item.getLayoutY() + 5);
+        });
+        return COPY_GROUP;
+    }
+
 }

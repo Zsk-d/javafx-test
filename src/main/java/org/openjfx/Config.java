@@ -1,7 +1,8 @@
 package org.openjfx;
 
 public class Config {
-    public static final double DEFAULT_CIRCLE_RADIUS = 20;
+    public static final double DEFAULT_CIRCLE_RADIUS = 40;
+    public static final double MIN_CIRCLE_RADIUS = 5;
 
     /**
      * 按键状态显示
@@ -15,5 +16,7 @@ public class Config {
 
     public static final int STAGE_WIDTH = 800;
     public static final int STAGE_HEIGHT = 800;
+
+    public static final int PASTE_XY_OFFSET = 10;
 
 }

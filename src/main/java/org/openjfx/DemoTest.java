@@ -92,7 +92,7 @@ public class DemoTest extends Application {
                     if (Global.isShiftPressed) {
                         // 创建圆形
                         AnchorPane parent = (AnchorPane) scene.getRoot();
-                        newCir(Global.mousePressedX, Global.mousePressedY,parent);
+                        newCir(Global.mousePressedX - Config.DEFAULT_CIRCLE_RADIUS, Global.mousePressedY - Config.DEFAULT_CIRCLE_RADIUS, parent,Config.DEFAULT_CIRCLE_RADIUS,false);
                     }
                 }
             }
@@ -115,15 +115,17 @@ public class DemoTest extends Application {
                 updateMouseText(mouseStatusText);
                 // 选择框关闭显示
                 mouseSelectR.setVisible(false);
+                
                 // 判断框选
-                if (Math.abs(Global.mouseReleasedX - Global.mousePressedX) > 10
+                if (event.getTarget() instanceof AnchorPane && Math.abs(Global.mouseReleasedX - Global.mousePressedX) > 10
                         && Math.abs(Global.mouseReleasedY - Global.mousePressedY) > 10) {
+                    unSelectAll();
                     batchSelectItem(Math.min(Global.mouseReleasedX, Global.mousePressedX),
                             Math.max(Global.mouseReleasedX, Global.mousePressedX),
                             Math.min(Global.mouseReleasedY, Global.mousePressedY),
                             Math.max(Global.mouseReleasedY, Global.mousePressedY));
-                } else {
-                    Global.cl.forEach(item -> item.unSelected());
+                } else if(event.getTarget() instanceof AnchorPane){
+                    unSelectAll();
                 }
             }
         });
@@ -155,17 +157,20 @@ public class DemoTest extends Application {
 
     }
 
-    private void newCir(double x, double y, AnchorPane parent){
-        CirclePanel cp = new CirclePanel(x,y, String.valueOf(Global.cNum++));
-                        updateChildren(parent, cp, true);
+    private void newCir(double x, double y, AnchorPane parent, double r, boolean isSelected) {
+        CirclePanel cp = new CirclePanel(x, y, String.valueOf(Global.cNum++), r);
+        if(isSelected){
+            cp.selected();
+        }
+        updateChildren(parent, cp, true);
     }
 
     private void batchSelectItem(double xStart, double xEnd, double yStart, double yEnd) {
-        System.out.println(String.format("xStart=%s,xEnd=%s,yStart=%s,yEnd=%s",xStart, xEnd, yStart, yEnd));
+        System.out.println(String.format("xStart=%s,xEnd=%s,yStart=%s,yEnd=%s", xStart, xEnd, yStart, yEnd));
         Global.cl.forEach(item -> {
             if (item.getCircle().getLayoutX() >= xStart
                     && item.getCircle().getLayoutX() <= xEnd &&
-                    item.getCircle().getLayoutY()>= yStart
+                    item.getCircle().getLayoutY() >= yStart
                     && item.getCircle().getLayoutY() <= yEnd) {
                 item.selected();
                 System.out.println(item.getCircle().getLayoutX() + " - " + item.getCircle().getLayoutY());
@@ -193,13 +198,54 @@ public class DemoTest extends Application {
                 } else if ("DELETE".equals(event.getCode().toString())) {
                     // 删除元素
                     Iterator<CirclePanel> iterator = Global.cl.iterator();
-                    while (iterator.hasNext()){
+                    while (iterator.hasNext()) {
                         CirclePanel next = iterator.next();
-                        if(next.isSelected()){
-                            ((AnchorPane)scene.getRoot()).getChildren().remove(next.getCircle());
+                        if (next.isSelected()) {
+                            ((AnchorPane) scene.getRoot()).getChildren().remove(next.getCircle());
                             iterator.remove();
                         }
                     }
+                } else if (("C".equals(event.getCode().toString()) || "X".equals(event.getCode().toString())) && Global.isCtrlPressed) {
+                    // 复制
+                    List<CirclePanel> selectedPanel = getSelectedPanel();
+                    if(selectedPanel != null){
+                        Iterator<CirclePanel> iterator = selectedPanel.iterator();
+                        ActionGroup actionGroup = new ActionGroup();
+                        List<ActionItem> actionItems = new ArrayList<>();
+                        while (iterator.hasNext()) {
+                            CirclePanel item = iterator.next();
+                            ActionItem aItem = new ActionItem();
+                            aItem.setItemNum(item.getCenterTextStr());
+                            aItem.setLayoutX(item.getCircle().getLayoutX());
+                            aItem.setLayoutY(item.getCircle().getLayoutY());
+                            aItem.setR(item.getR());
+                            actionItems.add(aItem);
+                            if("X".equals(event.getCode().toString())){
+                                ((AnchorPane) scene.getRoot()).getChildren().remove(item.getCircle());
+                                Global.cl.remove(item);
+                            }
+                        }
+                        
+                        actionGroup.setItems(actionItems);
+                        Global.setCopy(actionGroup);
+                        if("X".equals(event.getCode().toString())){
+                            Global.addUndo(actionGroup);
+                        }
+                        System.out.println("复制: " + actionItems.size());
+                    }
+                } else if("V".equals(event.getCode().toString()) && Global.isCtrlPressed){
+                    // 释放所有已选择
+                    unSelectAll();
+                    // 粘贴, 坐标偏移, 重新计算index
+                    ActionGroup copy = Global.getCopy();
+                    if(copy != null){
+                        copy.getItems().forEach(item->{
+                            AnchorPane parent = (AnchorPane) scene.getRoot();
+                            newCir(item.getLayoutX() + Config.PASTE_XY_OFFSET, item.getLayoutY() + Config.PASTE_XY_OFFSET, parent, item.getR(),true);
+                        });
+                        System.out.println("粘贴: " + copy.getItems().size());
+                    }
+                    
                 }
                 statusText.setText(String.format(Config.KEY_STATUS_TEXT_TMP, Global.isShiftPressed, Global.isAltPressed,
                         Global.isCtrlPressed));
@@ -230,6 +276,26 @@ public class DemoTest extends Application {
         text.setText(String.format(Config.MOUSE_STATUS_TEXT_TMP, Global.isMousePressed, Global.mousePressedX,
                 Global.mousePressedY, Global.mouseReleasedX, Global.mouseReleasedY, Global.mouseNowX,
                 Global.mouseNowY));
+    }
+
+    private List<CirclePanel> getSelectedPanel() {
+        List<CirclePanel> circlePanels = null;
+        for (CirclePanel item : Global.cl) {
+            if (item.isSelected()) {
+                if (circlePanels == null) {
+                    circlePanels = new ArrayList<>();
+                }
+                circlePanels.add(item);
+            }
+        }
+        return circlePanels;
+    }
+
+    private void unSelectAll() {
+        List<CirclePanel> selectedPanel = getSelectedPanel();
+        if(selectedPanel != null){
+            selectedPanel.forEach(CirclePanel::unSelected);
+        }
     }
 
     /**
