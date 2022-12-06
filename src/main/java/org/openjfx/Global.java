@@ -1,6 +1,7 @@
 package org.openjfx;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Global {
@@ -42,18 +43,37 @@ public class Global {
      * 剪贴板
      */
     private static ActionGroup COPY_GROUP = null;
+
+    private static int undoIndex = 0;
     
     public static void addUndo(ActionGroup actionGroup){
-        UNDO_GROUPS.add(actionGroup);
-        if(UNDO_GROUPS.size() >  10){
-            UNDO_GROUPS.remove(0);
+        // 删除已撤回
+        for(int i = 0;i<undoIndex;i++){
+            UNDO_GROUPS.remove(UNDO_GROUPS.size() - 1);
         }
+        UNDO_GROUPS.add(actionGroup);
+        // if(UNDO_GROUPS.size() >  10){
+        //     UNDO_GROUPS.remove(0);
+        // }
+        undoIndex = 0;
+        System.out.println("保存操作 " + actionGroup.getType() + ", items num= " + actionGroup.getItems().size());
     }
 
-    private ActionGroup getUndo(){
-        if(UNDO_GROUPS.size() > 0){
-            return UNDO_GROUPS.remove(UNDO_GROUPS.size() - 1);
+    public static ActionGroup reDo(){
+        if(undoIndex != 0 && UNDO_GROUPS.size() > 0){
+            System.out.println("重做操作 undoIndex=" + undoIndex + ", size = " + UNDO_GROUPS.size());
+            return UNDO_GROUPS.get(UNDO_GROUPS.size() - undoIndex--);
         }
+        System.out.println("无效重做");
+        return null;
+    }
+
+    public static ActionGroup unDo(){
+        if(undoIndex != UNDO_GROUPS.size()){
+            System.out.println("撤销操作 undoIndex=" + undoIndex + ", size = " + UNDO_GROUPS.size());
+            return UNDO_GROUPS.get(UNDO_GROUPS.size() -1 - undoIndex++);
+        }
+        System.out.println("无效撤销");
         return null;
     }
 

@@ -5,6 +5,7 @@ public class ActionItem {
     private double layoutX;
     private double layoutY;
     private double r;
+    private CirclePanel item;
     public String getItemNum() {
         return itemNum;
     }
@@ -28,6 +29,12 @@ public class ActionItem {
     }
     public void setR(double r) {
         this.r = r;
+    }
+    public CirclePanel getItem() {
+        return item;
+    }
+    public void setItem(CirclePanel item) {
+        this.item = item;
     }
 
     

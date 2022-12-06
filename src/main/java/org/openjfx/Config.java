@@ -19,4 +19,9 @@ public class Config {
 
     public static final int PASTE_XY_OFFSET = 10;
 
+    public static final String actionTypeNew = "New";
+    public static final String actionTypeDelete = "Delete";
+    public static final String actionTypeMove = "Move";
+    public static final String actionTypeChangeR = "ChangeR";
+
 }

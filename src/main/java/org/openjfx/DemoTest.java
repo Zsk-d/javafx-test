@@ -92,7 +92,19 @@ public class DemoTest extends Application {
                     if (Global.isShiftPressed) {
                         // 创建圆形
                         AnchorPane parent = (AnchorPane) scene.getRoot();
-                        newCir(Global.mousePressedX - Config.DEFAULT_CIRCLE_RADIUS, Global.mousePressedY - Config.DEFAULT_CIRCLE_RADIUS, parent,Config.DEFAULT_CIRCLE_RADIUS,false);
+                        CirclePanel newItem = newCir(Global.mousePressedX - Config.DEFAULT_CIRCLE_RADIUS, Global.mousePressedY - Config.DEFAULT_CIRCLE_RADIUS, parent,Config.DEFAULT_CIRCLE_RADIUS,false);
+                        // 保存撤销
+                        ActionGroup actionGroup = new ActionGroup();
+                        actionGroup.setType(Config.actionTypeNew);
+                        List<ActionItem> items = new ArrayList<>();
+                        ActionItem item = new ActionItem();
+                        item.setItemNum(String.valueOf(Global.cNum));
+                        item.setLayoutX(Global.mousePressedX - Config.DEFAULT_CIRCLE_RADIUS);
+                        item.setLayoutY(Global.mousePressedY - Config.DEFAULT_CIRCLE_RADIUS);
+                        item.setItem(newItem);
+                        items.add(item);
+                        actionGroup.setItems(items);
+                        Global.addUndo(actionGroup);
                     }
                 }
             }
@@ -157,12 +169,13 @@ public class DemoTest extends Application {
 
     }
 
-    private void newCir(double x, double y, AnchorPane parent, double r, boolean isSelected) {
+    private CirclePanel newCir(double x, double y, AnchorPane parent, double r, boolean isSelected) {
         CirclePanel cp = new CirclePanel(x, y, String.valueOf(Global.cNum++), r);
         if(isSelected){
             cp.selected();
         }
         updateChildren(parent, cp, true);
+        return cp;
     }
 
     private void batchSelectItem(double xStart, double xEnd, double yStart, double yEnd) {
@@ -198,12 +211,33 @@ public class DemoTest extends Application {
                 } else if ("DELETE".equals(event.getCode().toString())) {
                     // 删除元素
                     Iterator<CirclePanel> iterator = Global.cl.iterator();
+                    List<CirclePanel> deletedItems = new ArrayList<>();
                     while (iterator.hasNext()) {
                         CirclePanel next = iterator.next();
                         if (next.isSelected()) {
                             ((AnchorPane) scene.getRoot()).getChildren().remove(next.getCircle());
                             iterator.remove();
+                            deletedItems.add(next);
                         }
+                    }
+                    // 保存撤销
+                    ActionGroup actionGroup = new ActionGroup();
+                    actionGroup.setType(Config.actionTypeDelete);
+                    List<ActionItem> items = null;
+                    for(CirclePanel circlePanel :deletedItems){
+                        if(items == null){
+                            items = new ArrayList<>();
+                        }
+                        ActionItem item = new ActionItem();
+                        item.setItemNum(circlePanel.getCenterTextStr());
+                        item.setLayoutX(circlePanel.getCircle().getLayoutX());
+                        item.setLayoutY(circlePanel.getCircle().getLayoutY());
+                        item.setItem(circlePanel);
+                        items.add(item);
+                    }
+                    if(items != null){
+                        actionGroup.setItems(items);
+                        Global.addUndo(actionGroup);
                     }
                 } else if (("C".equals(event.getCode().toString()) || "X".equals(event.getCode().toString())) && Global.isCtrlPressed) {
                     // 复制
@@ -241,11 +275,57 @@ public class DemoTest extends Application {
                     if(copy != null){
                         copy.getItems().forEach(item->{
                             AnchorPane parent = (AnchorPane) scene.getRoot();
-                            newCir(item.getLayoutX() + Config.PASTE_XY_OFFSET, item.getLayoutY() + Config.PASTE_XY_OFFSET, parent, item.getR(),true);
+                            CirclePanel newItem = newCir(item.getLayoutX() + Config.PASTE_XY_OFFSET, item.getLayoutY() + Config.PASTE_XY_OFFSET, parent, item.getR(),true);
                         });
                         System.out.println("粘贴: " + copy.getItems().size());
                     }
                     
+                } else if("Z".equals(event.getCode().toString()) && Global.isCtrlPressed){
+                    // 撤销
+                    ActionGroup unDo = Global.unDo();
+                    if(unDo != null){
+                        // 检查类型
+                        if(Config.actionTypeNew.equals(unDo.getType())){
+                            // 新建, 进行删除
+                            unDo.getItems().forEach(iitem->{
+                                ((AnchorPane) scene.getRoot()).getChildren().remove(iitem.getItem().getCircle());
+                                Global.cl.remove(iitem.getItem());
+                            });
+                        }else if(Config.actionTypeDelete.equals(unDo.getType())){
+                            // 删除, 创建
+                            unDo.getItems().forEach(iitem->{
+                                ((AnchorPane) scene.getRoot()).getChildren().add(iitem.getItem().getCircle());
+                                Global.cl.add(iitem.getItem());
+                            });
+                        }else if(Config.actionTypeMove.equals(unDo.getType())){
+                            // 移动
+                        }else if(Config.actionTypeChangeR.equals(unDo.getType())){
+                            // 改变半径
+                        }
+                    }
+                } else if("Y".equals(event.getCode().toString()) && Global.isCtrlPressed){
+                    // 重做
+                    ActionGroup reDo = Global.reDo();
+                    if(reDo != null){
+                        // 检查类型
+                        if(Config.actionTypeNew.equals(reDo.getType())){
+                            // 新建
+                            reDo.getItems().forEach(iitem->{
+                                ((AnchorPane) scene.getRoot()).getChildren().add(iitem.getItem().getCircle());
+                                Global.cl.add(iitem.getItem());
+                            });
+                        }else if(Config.actionTypeDelete.equals(reDo.getType())){
+                            // 删除
+                            reDo.getItems().forEach(iitem->{
+                                ((AnchorPane) scene.getRoot()).getChildren().remove(iitem.getItem().getCircle());
+                                Global.cl.remove(iitem.getItem());
+                            });
+                        }else if(Config.actionTypeMove.equals(reDo.getType())){
+                            // 移动
+                        }else if(Config.actionTypeChangeR.equals(reDo.getType())){
+                            // 改变半径
+                        }
+                    }
                 }
                 statusText.setText(String.format(Config.KEY_STATUS_TEXT_TMP, Global.isShiftPressed, Global.isAltPressed,
                         Global.isCtrlPressed));
