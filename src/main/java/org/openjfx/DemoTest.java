@@ -298,7 +298,13 @@ public class DemoTest extends Application {
                                 Global.cl.add(iitem.getItem());
                             });
                         }else if(Config.actionTypeMove.equals(unDo.getType())){
-                            // 移动
+                            // 移动, 恢复移动前位置
+                            unDo.getItems().forEach(iitem->{
+                                CirclePanel circlePanel = iitem.getItem();
+                                StackPane stackPane = circlePanel.getCircle();
+                                stackPane.setLayoutX(iitem.getBeforeMoveLayoutX());
+                                stackPane.setLayoutY(iitem.getBeforeMoveLayoutY());
+                            });
                         }else if(Config.actionTypeChangeR.equals(unDo.getType())){
                             // 改变半径
                         }
@@ -322,6 +328,12 @@ public class DemoTest extends Application {
                             });
                         }else if(Config.actionTypeMove.equals(reDo.getType())){
                             // 移动
+                            reDo.getItems().forEach(iitem->{
+                                CirclePanel circlePanel = iitem.getItem();
+                                StackPane stackPane = circlePanel.getCircle();
+                                stackPane.setLayoutX(iitem.getAfterMoveLayoutX());
+                                stackPane.setLayoutY(iitem.getAfterMoveLayoutY());
+                            });
                         }else if(Config.actionTypeChangeR.equals(reDo.getType())){
                             // 改变半径
                         }

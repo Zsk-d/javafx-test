@@ -30,6 +30,17 @@ public class CirclePanel {
     private double srcLayoutX = 0;
     private double srcLayoutY = 0;
 
+    /**
+     * 移动前的位置
+     */
+    private double beforeMoveLayoutX = 0;
+    private double beforeMoveLayoutY = 0;
+    /**
+     * 移动后位置
+     */
+    private double afterMoveLayoutX = 0;
+    private double afterMoveLayoutY = 0;
+
     private double connectX = 0;
     private double connectY = 0;
 
@@ -64,6 +75,10 @@ public class CirclePanel {
         stack.setLayoutY(y);
         this.srcLayoutX = x;
         this.srcLayoutY = y;
+        this.beforeMoveLayoutX = x;
+        this.beforeMoveLayoutY = y;
+        this.afterMoveLayoutX = x;
+        this.afterMoveLayoutY = y;
         this.circle.setRadius(r);
     }
 
@@ -106,6 +121,7 @@ public class CirclePanel {
     }
 
     private void setMouseEvent() {
+        CirclePanel thisObj = this;
         this.circle.setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent event) {
@@ -125,6 +141,8 @@ public class CirclePanel {
                 cY = event.getY() + circle.getRadius();
 
                 pX = event.getX();
+                beforeMoveLayoutX = stack.getLayoutX();
+                beforeMoveLayoutX = stack.getLayoutX();
                 // System.out.println(String.format("x=%s,cx=%s,r=%s", event.getX(),AnchorPane.getLeftAnchor(circle),circle.getRadius()));
                 // System.out.println(String.format("y=%s,cy=%s,r=%s", event.getY(),AnchorPane.getTopAnchor(circle),circle.getRadius()));
             }
@@ -142,8 +160,13 @@ public class CirclePanel {
                     cps.add(item);
                     item.setConnectX(stack.getLayoutX() - item.getCircle().getLayoutX());
                     item.setConnectY(stack.getLayoutY() - item.getCircle().getLayoutY());
+                    // 保存初始位置
+                    item.beforeMoveLayoutX = item.getCircle().getLayoutX();
+                    item.beforeMoveLayoutY = item.getCircle().getLayoutY();
                 }
             }
+            beforeMoveLayoutX = stack.getLayoutX();
+            beforeMoveLayoutY = stack.getLayoutY();
             System.out.println(String.format("同时控制: %s",cps));
             this.setBros(cps);
         });
@@ -192,9 +215,50 @@ public class CirclePanel {
         this.circle.setOnMouseDragReleased(new EventHandler<MouseDragEvent>() {
             @Override
             public void handle(MouseDragEvent event) {
+                afterMoveLayoutX = stack.getLayoutX();
+                afterMoveLayoutY = stack.getLayoutY();
+                // 判断是否为移动
+                boolean isMove = afterMoveLayoutX != beforeMoveLayoutX || afterMoveLayoutY != beforeMoveLayoutY;
+                if(isMove){
+                    System.out.println(String.format("移动 bx = %.2f, by = %.2f, ax = %.2f, ay = %.2f", beforeMoveLayoutX,beforeMoveLayoutY,afterMoveLayoutX,afterMoveLayoutY));
+                }
+                // 保存撤销
+                ActionGroup actionGroup = null;
+                List<ActionItem> items = null;
+                if(isMove){
+                    actionGroup = new ActionGroup();
+                    items = new ArrayList<>();
+                    actionGroup.setType(Config.actionTypeMove);
+                    ActionItem actionItem = new ActionItem();
+                    actionItem.setBeforeMoveLayoutX(thisObj.getAfterMoveLayoutX());
+                    actionItem.setBeforeMoveLayoutY(thisObj.getAfterMoveLayoutY());
+                    actionItem.setAfterMoveLayoutX(thisObj.getAfterMoveLayoutX());
+                    actionItem.setAfterMoveLayoutY(thisObj.getAfterMoveLayoutY());
+                    actionItem.setItem(thisObj);
+                    items.add(actionItem);
+                }
                 if(bros != null){
-                    bros.forEach(item->item.saveR());
+                    for(CirclePanel item: bros){
+                        item.saveR();
+                        // 保存新位置
+                        item.afterMoveLayoutX = item.getCircle().getLayoutX();
+                        item.afterMoveLayoutY = item.getCircle().getLayoutY();
+                        if(isMove){
+                            // 保存撤销
+                            ActionItem groupActionItem = new ActionItem();
+                            groupActionItem.setItem(item);
+                            groupActionItem.setBeforeMoveLayoutX(item.getBeforeMoveLayoutX());
+                            groupActionItem.setBeforeMoveLayoutY(item.getBeforeMoveLayoutY());
+                            groupActionItem.setAfterMoveLayoutX(item.getAfterMoveLayoutX());
+                            groupActionItem.setAfterMoveLayoutY(item.getAfterMoveLayoutY());
+                            items.add(groupActionItem);
+                        }
+                    }
                     bros = null;
+                }
+                if(isMove){
+                    actionGroup.setItems(items);
+                    Global.addUndo(actionGroup);
                 }
                 saveR();
                 saveLayoutLoc();
@@ -236,6 +300,38 @@ public class CirclePanel {
 
     public void setConnectY(double connectY) {
         this.connectY = connectY;
+    }
+
+    public double getBeforeMoveLayoutX() {
+        return beforeMoveLayoutX;
+    }
+
+    public void setBeforeMoveLayoutX(double beforeMoveLayoutX) {
+        this.beforeMoveLayoutX = beforeMoveLayoutX;
+    }
+
+    public double getBeforeMoveLayoutY() {
+        return beforeMoveLayoutY;
+    }
+
+    public void setBeforeMoveLayoutY(double beforeMoveLayoutY) {
+        this.beforeMoveLayoutY = beforeMoveLayoutY;
+    }
+
+    public double getAfterMoveLayoutX() {
+        return afterMoveLayoutX;
+    }
+
+    public void setAfterMoveLayoutX(double afterMoveLayoutX) {
+        this.afterMoveLayoutX = afterMoveLayoutX;
+    }
+
+    public double getAfterMoveLayoutY() {
+        return afterMoveLayoutY;
+    }
+
+    public void setAfterMoveLayoutY(double afterMoveLayoutY) {
+        this.afterMoveLayoutY = afterMoveLayoutY;
     }
 
     @Override
