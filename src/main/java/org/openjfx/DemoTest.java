@@ -307,6 +307,10 @@ public class DemoTest extends Application {
                             });
                         }else if(Config.actionTypeChangeR.equals(unDo.getType())){
                             // 改变半径
+                            unDo.getItems().forEach(iitem->{
+                                CirclePanel circlePanel = iitem.getItem();
+                                circlePanel.setR(iitem.getBeforeR());
+                            });
                         }
                     }
                 } else if("Y".equals(event.getCode().toString()) && Global.isCtrlPressed){
@@ -336,6 +340,10 @@ public class DemoTest extends Application {
                             });
                         }else if(Config.actionTypeChangeR.equals(reDo.getType())){
                             // 改变半径
+                            reDo.getItems().forEach(iitem->{
+                                CirclePanel circlePanel = iitem.getItem();
+                                circlePanel.setR(iitem.getAfterR());
+                            });
                         }
                     }
                 }

@@ -41,6 +41,12 @@ public class CirclePanel {
     private double afterMoveLayoutX = 0;
     private double afterMoveLayoutY = 0;
 
+    /**
+     * 缩放前和后的半径
+     */
+    private double beforeR = 0;
+    private double afterR = 0;
+
     private double connectX = 0;
     private double connectY = 0;
 
@@ -80,6 +86,8 @@ public class CirclePanel {
         this.afterMoveLayoutX = x;
         this.afterMoveLayoutY = y;
         this.circle.setRadius(r);
+        this.beforeR = r;
+        this.afterR = r;
     }
 
     public CirclePanel(double x, double y, String centerTextStr) {
@@ -163,10 +171,15 @@ public class CirclePanel {
                     // 保存初始位置
                     item.beforeMoveLayoutX = item.getCircle().getLayoutX();
                     item.beforeMoveLayoutY = item.getCircle().getLayoutY();
+                    // 保存初始半径
+                    item.beforeR = item.getR();
                 }
             }
+            // 保存初始位置
             beforeMoveLayoutX = stack.getLayoutX();
             beforeMoveLayoutY = stack.getLayoutY();
+            // 保存初始半径
+            beforeR = getR();
             System.out.println(String.format("同时控制: %s",cps));
             this.setBros(cps);
         });
@@ -217,10 +230,16 @@ public class CirclePanel {
             public void handle(MouseDragEvent event) {
                 afterMoveLayoutX = stack.getLayoutX();
                 afterMoveLayoutY = stack.getLayoutY();
+                afterR = getR();
                 // 判断是否为移动
                 boolean isMove = afterMoveLayoutX != beforeMoveLayoutX || afterMoveLayoutY != beforeMoveLayoutY;
                 if(isMove){
                     System.out.println(String.format("移动 bx = %.2f, by = %.2f, ax = %.2f, ay = %.2f", beforeMoveLayoutX,beforeMoveLayoutY,afterMoveLayoutX,afterMoveLayoutY));
+                }
+                // 判断是否为变更大小
+                boolean isChangeR = afterR != beforeR;
+                if(isChangeR){
+                    System.out.println(String.format("改变大小 原半径 = %.2f, 新半径 = %.2f",beforeR,afterR));
                 }
                 // 保存撤销
                 ActionGroup actionGroup = null;
@@ -230,10 +249,20 @@ public class CirclePanel {
                     items = new ArrayList<>();
                     actionGroup.setType(Config.actionTypeMove);
                     ActionItem actionItem = new ActionItem();
-                    actionItem.setBeforeMoveLayoutX(thisObj.getAfterMoveLayoutX());
-                    actionItem.setBeforeMoveLayoutY(thisObj.getAfterMoveLayoutY());
+                    actionItem.setBeforeMoveLayoutX(thisObj.getBeforeMoveLayoutX());
+                    actionItem.setBeforeMoveLayoutY(thisObj.getBeforeMoveLayoutY());
                     actionItem.setAfterMoveLayoutX(thisObj.getAfterMoveLayoutX());
                     actionItem.setAfterMoveLayoutY(thisObj.getAfterMoveLayoutY());
+                    actionItem.setItem(thisObj);
+                    items.add(actionItem);
+                }
+                if(isChangeR){
+                    actionGroup = new ActionGroup();
+                    items = new ArrayList<>();
+                    actionGroup.setType(Config.actionTypeChangeR);
+                    ActionItem actionItem = new ActionItem();
+                    actionItem.setBeforeR(beforeR);
+                    actionItem.setAfterR(afterR);
                     actionItem.setItem(thisObj);
                     items.add(actionItem);
                 }
@@ -243,6 +272,8 @@ public class CirclePanel {
                         // 保存新位置
                         item.afterMoveLayoutX = item.getCircle().getLayoutX();
                         item.afterMoveLayoutY = item.getCircle().getLayoutY();
+                        // 保存新半径
+                        item.afterR = item.getR();
                         if(isMove){
                             // 保存撤销
                             ActionItem groupActionItem = new ActionItem();
@@ -253,10 +284,17 @@ public class CirclePanel {
                             groupActionItem.setAfterMoveLayoutY(item.getAfterMoveLayoutY());
                             items.add(groupActionItem);
                         }
+                        if(isChangeR){
+                            ActionItem groupActionItem = new ActionItem();
+                            groupActionItem.setBeforeR(item.getBeforeR());
+                            groupActionItem.setAfterR(item.getAfterR());
+                            groupActionItem.setItem(item);
+                            items.add(groupActionItem);
+                        }
                     }
                     bros = null;
                 }
-                if(isMove){
+                if(isMove || isChangeR){
                     actionGroup.setItems(items);
                     Global.addUndo(actionGroup);
                 }
@@ -332,6 +370,22 @@ public class CirclePanel {
 
     public void setAfterMoveLayoutY(double afterMoveLayoutY) {
         this.afterMoveLayoutY = afterMoveLayoutY;
+    }
+
+    public double getBeforeR() {
+        return beforeR;
+    }
+
+    public void setBeforeR(double beforeR) {
+        this.beforeR = beforeR;
+    }
+
+    public double getAfterR() {
+        return afterR;
+    }
+
+    public void setAfterR(double afterR) {
+        this.afterR = afterR;
     }
 
     @Override

@@ -16,6 +16,9 @@ public class ActionItem {
      */
     private double afterMoveLayoutX = 0;
     private double afterMoveLayoutY = 0;
+
+    private double beforeR = 0;
+    private double afterR = 0;
     
     public String getItemNum() {
         return itemNum;
@@ -70,6 +73,18 @@ public class ActionItem {
     }
     public void setAfterMoveLayoutY(double afterMoveLayoutY) {
         this.afterMoveLayoutY = afterMoveLayoutY;
+    }
+    public double getBeforeR() {
+        return beforeR;
+    }
+    public void setBeforeR(double beforeR) {
+        this.beforeR = beforeR;
+    }
+    public double getAfterR() {
+        return afterR;
+    }
+    public void setAfterR(double afterR) {
+        this.afterR = afterR;
     }
 
     
