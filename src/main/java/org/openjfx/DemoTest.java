@@ -273,10 +273,23 @@ public class DemoTest extends Application {
                     // 粘贴, 坐标偏移, 重新计算index
                     ActionGroup copy = Global.getCopy();
                     if(copy != null){
+                        // 保存撤销
+                        ActionGroup actionGroup = new ActionGroup();
+                        actionGroup.setType(Config.actionTypeNew);
+                        List<ActionItem> items = new ArrayList<>();
                         copy.getItems().forEach(item->{
                             AnchorPane parent = (AnchorPane) scene.getRoot();
                             CirclePanel newItem = newCir(item.getLayoutX() + Config.PASTE_XY_OFFSET, item.getLayoutY() + Config.PASTE_XY_OFFSET, parent, item.getR(),true);
+                            
+                            ActionItem actionItem = new ActionItem();
+                            actionItem.setItemNum(String.valueOf(Global.cNum));
+                            actionItem.setLayoutX(newItem.getBeforeMoveLayoutX());
+                            actionItem.setLayoutY(newItem.getBeforeMoveLayoutY());
+                            actionItem.setItem(newItem);
+                            items.add(actionItem);
                         });
+                        actionGroup.setItems(items);
+                        Global.addUndo(actionGroup);
                         System.out.println("粘贴: " + copy.getItems().size());
                     }
                     
