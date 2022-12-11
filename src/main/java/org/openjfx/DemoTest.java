@@ -359,6 +359,12 @@ public class DemoTest extends Application {
                             });
                         }
                     }
+                }else if("T".equals(event.getCode().toString()) && Global.isCtrlPressed){
+                    // 训练界面
+                    
+                }else if("E".equals(event.getCode().toString()) && Global.isCtrlPressed){
+                    // 强制关闭训练界面
+                    
                 }
                 statusText.setText(String.format(Config.KEY_STATUS_TEXT_TMP, Global.isShiftPressed, Global.isAltPressed,
                         Global.isCtrlPressed));
