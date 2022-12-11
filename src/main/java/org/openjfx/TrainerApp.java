@@ -23,8 +23,8 @@ public class TrainerApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        Scene scene = new MainUI().initScene(primaryStage, mouseSelectR);
-        showUi(primaryStage, scene);
+        Scene mainUI = new MainUI().initScene(primaryStage, mouseSelectR);
+        showUi(primaryStage, mainUI);
     }
     /**
      * 显示整体窗口

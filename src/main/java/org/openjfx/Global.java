@@ -28,6 +28,8 @@ public class Global {
     public static double mouseReleasedX = -1;
     public static double mouseReleasedY = -1;
 
+    public static boolean isTraining = false;
+
     /**
      * 所有圆形panel集合
      */

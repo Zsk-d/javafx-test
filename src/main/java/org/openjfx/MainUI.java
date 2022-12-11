@@ -6,11 +6,18 @@ import java.util.List;
 import java.util.Objects;
 
 import javafx.event.EventHandler;
+import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.ScatterChart;
+import javafx.scene.chart.XYChart;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
@@ -25,10 +32,155 @@ public class MainUI {
         this.interactionModel = interactionModel;
     }
     private Rectangle mouseSelectR;
+    private Stage primaryStage;
 
     public MainUI(){
         this.interactionModel = new InteractionModel();
     }
+
+    private void changeScene(boolean isMain){
+        if(!isMain){
+            this.initTrainScene();
+        }
+        primaryStage.setScene(isMain?scene:trainScene);
+    }
+    
+    private void updateChildren(AnchorPane parent, StackPane circle, boolean isAdd) {
+        if (isAdd) {
+            parent.getChildren().add(circle);
+        } else {
+            if (parent.getChildren().contains(circle)) {
+                parent.getChildren().remove(circle);
+            }
+        }
+    }
+
+    private void nextTraining(AnchorPane parent){
+        TrialRecord next = this.interactionModel.next();
+        Circle circle = new Circle(next.getR());
+        circle.setStroke(Color.BLACK);
+        circle.setFill(Color.BLUEVIOLET);
+        circle.setLayoutX(next.getX() + 40);
+        circle.setLayoutY(next.getY() + 40);
+        parent.getChildren().add(circle);
+    }
+    private void initChart(){
+        NumberAxis xAxis = new NumberAxis();
+        xAxis.setLabel("Time Range");
+        NumberAxis yAxis = new NumberAxis();
+        yAxis.setLabel("ID");
+        ScatterChart scatterChart = new ScatterChart(xAxis, yAxis);
+        XYChart.Series dataSeries1 = new XYChart.Series();
+        dataSeries1.setName("Time Range - ID");
+        List<TrialRecord> trialRecordList = interactionModel.getTrialRecordList();
+        double preX = 0;
+        double preY = 0;
+        double preR = 0;
+        for(int i = 0;i<trialRecordList.size();i++){
+            if(i == 0){
+                preX = trialRecordList.get(i).getX();
+                preY = trialRecordList.get(i).getY();
+                preR = trialRecordList.get(i).getR();
+            }else{
+                double dX = trialRecordList.get(i).getX() - preX;
+                double dY = trialRecordList.get(i).getY() - preY;
+                double d = Math.sqrt(dX * dX + dY * dY) - preR - trialRecordList.get(i).getR();
+                long timeRange = trialRecordList.get(i).getTimeRange();
+                dataSeries1.getData().add(new XYChart.Data( timeRange, d));
+            }
+        }
+        
+        scatterChart.getData().add(dataSeries1);
+        
+        VBox vbox = new VBox(scatterChart);
+        
+        Scene reportScene = new Scene(vbox);
+        reportScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
+            @Override
+            public void handle(KeyEvent event) {if("E".equals(event.getCode().toString()) && Global.isCtrlPressed){
+                    // 强制关闭训练界面
+                    changeScene(true);
+                    Global.isTraining = false;
+                    System.out.println("chat e");
+                }else if("T".equals(event.getCode().toString()) && Global.isCtrlPressed){
+                    // 强制关闭训练界面
+                    System.out.println("chat t");
+                    changeScene(false);
+                    try {
+                        new Thread(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                changeScene(true);
+                                Global.isTraining = true;
+                            }
+                            
+                        }).start();
+                    } catch (Exception e) {
+                    }
+                }
+        }});
+        primaryStage.setScene(reportScene); 
+        primaryStage.setHeight(Config.STAGE_HEIGHT+Global.cNum);
+        primaryStage.setWidth(Config.STAGE_WIDTH+Global.cNum);
+    }
+    public void initTrainScene(){
+        AnchorPane parent = new AnchorPane();
+        trainScene = new Scene(parent,Color.YELLOWGREEN);
+        trainScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
+            @Override
+            public void handle(KeyEvent event) {
+                if("E".equals(event.getCode().toString()) && Global.isCtrlPressed){
+                    // 强制关闭训练界面
+                    changeScene(true);
+                    Global.isTraining = false;
+                }else if("T".equals(event.getCode().toString()) && Global.isCtrlPressed && Global.isTraining){
+                    // 强制关闭训练界面
+                    changeScene(false);
+                    try {
+                        new Thread(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                changeScene(true);
+                                Global.isTraining = true;
+                            }
+                            
+                        }).start();
+                    } catch (Exception e) {
+                    }
+                }
+        }});
+        trainScene.setOnMouseClicked(new EventHandler<MouseEvent>() {
+
+            @Override
+            public void handle(MouseEvent event) {
+                if(event.getTarget() instanceof Circle){
+                    interactionModel.setTime();
+                    parent.getChildren().remove(event.getTarget());
+                    if(interactionModel.hasNext()){
+                        nextTraining(parent);
+                    }else{
+                        // 训练结束, 统计结果
+                        System.out.println("train end ! " + interactionModel.getTrialRecordList());
+                        Global.isTraining = false;
+                        initChart();
+                    }
+                }
+                
+            }
+            
+        });
+        // 保存已创建的形状
+        interactionModel.setTrialRecordList(new ArrayList<>());
+        for(int i = 0;i<Global.cl.size();i++){
+            CircleView item = Global.cl.get(i);
+            interactionModel.getTrialRecordList().add(new TrialRecord(item.getR(), item.getCircle().getLayoutX(), item.getCircle().getLayoutY(), i));
+        }
+        this.nextTraining(parent);
+    }
+    private Scene scene;
+    private Scene trainScene;
     
     public Scene initScene(Stage primaryStage,Rectangle mouseSelectR){
         AnchorPane parent = new AnchorPane();
@@ -43,11 +195,12 @@ public class MainUI {
                         Global.mouseNowY));
         mouseStatusText.setFont(Font.font(12));
 
-        Scene scene = new Scene(parent);
+        scene = new Scene(parent);
         addSceneKeyEvent(keyStatusText, scene);
         addSceneMouseEvent(mouseStatusText, scene, primaryStage);
         this.mouseSelectR = mouseSelectR;
         parent.getChildren().addAll(keyStatusText, mouseStatusText, mouseSelectR);
+        this.primaryStage = primaryStage;
         return scene;
     }
 
@@ -215,10 +368,10 @@ public class MainUI {
                     }
                 }else if("T".equals(event.getCode().toString()) && Global.isCtrlPressed){
                     // 训练界面
-                    
+                    changeScene(false);
                 }else if("E".equals(event.getCode().toString()) && Global.isCtrlPressed){
                     // 强制关闭训练界面
-                    
+                    changeScene(true);
                 }
                 statusText.setText(String.format(Config.KEY_STATUS_TEXT_TMP, Global.isShiftPressed, Global.isAltPressed,
                         Global.isCtrlPressed));
@@ -239,7 +392,6 @@ public class MainUI {
             }
         });
     }
-
     
     private void addSceneMouseEvent(Text mouseStatusText, Scene scene, Stage primaryStage) {
         scene.setOnMouseClicked(new EventHandler<MouseEvent>() {
@@ -328,8 +480,6 @@ public class MainUI {
     }
 
     
-
-    
     private CircleView newCir(double x, double y, AnchorPane parent, double r, boolean isSelected) {
         CircleView cp = new CircleView(x, y, String.valueOf(Global.cNum++), r);
         if(isSelected){
@@ -352,15 +502,6 @@ public class MainUI {
         });
     }
 
-    private void updateChildren(AnchorPane parent, StackPane circle, boolean isAdd) {
-        if (isAdd) {
-            parent.getChildren().add(circle);
-        } else {
-            if (parent.getChildren().contains(circle)) {
-                parent.getChildren().remove(circle);
-            }
-        }
-    }
 
     private void updateChildren(AnchorPane parent, CircleView shapePanel, boolean isAdd) {
         if (Objects.isNull(shapePanel)) {
