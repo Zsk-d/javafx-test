@@ -1,7 +1,6 @@
 package org.openjfx;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class Global {
@@ -32,7 +31,7 @@ public class Global {
     /**
      * 所有圆形panel集合
      */
-    public final static List<CirclePanel> cl = new ArrayList<>();
+    public final static List<CircleView> cl = new ArrayList<>();
 
     /**
      * 撤销/重做 列表

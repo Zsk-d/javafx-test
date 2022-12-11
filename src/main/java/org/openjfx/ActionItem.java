@@ -5,7 +5,7 @@ public class ActionItem {
     private double layoutX;
     private double layoutY;
     private double r;
-    private CirclePanel item;
+    private CircleView item;
     /**
      * 移动前的位置
      */
@@ -44,10 +44,10 @@ public class ActionItem {
     public void setR(double r) {
         this.r = r;
     }
-    public CirclePanel getItem() {
+    public CircleView getItem() {
         return item;
     }
-    public void setItem(CirclePanel item) {
+    public void setItem(CircleView item) {
         this.item = item;
     }
     public double getBeforeMoveLayoutX() {
